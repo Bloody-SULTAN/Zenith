@@ -13,20 +13,22 @@ export interface APODResponse {
   copyright?: string;
 }
 
-// ── ISS Tracking (Open Notify) ───────────────
+// ── ISS Tracking (SGP4 Propagation) ──────────
 export interface ISSPosition {
   latitude: number;
   longitude: number;
   timestamp: number;
 }
 
-export interface ISSAPIResponse {
-  message: string;
-  timestamp: number;
-  iss_position: {
-    latitude: string;
-    longitude: string;
-  };
+export interface ISSPositionExtended extends ISSPosition {
+  altitude: number;  // km above Earth surface
+  velocity: number;  // km/s
+}
+
+export interface TLEData {
+  line1: string;
+  line2: string;
+  fetchedAt: number;
 }
 
 // ── Mars Rover Photos ────────────────────────
@@ -163,4 +165,5 @@ export interface APIError {
 export interface FetchOptions {
   signal?: AbortSignal;
   params?: Record<string, string>;
+  cacheTTL?: number; // localStorage cache TTL in ms (0 = no cache)
 }

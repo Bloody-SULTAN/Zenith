@@ -3,7 +3,7 @@
 // ──────────────────────────────────────────────
 // Central fetch utility for all NASA APIs.
 // Handles: error normalization, rate-limit detection,
-// request logging, and AbortController integration.
+// localStorage caching, and AbortController integration.
 
 import type {
   APODResponse,
@@ -16,8 +16,41 @@ import type {
 
 const NASA_BASE_URL = 'https://api.nasa.gov';
 const DEMO_KEY = 'DEMO_KEY';
+const CACHE_PREFIX = 'zenith_api_';
 
-// Rate-limit tracking
+// ── localStorage Cache ──────────────────────
+
+interface CacheEntry<T> {
+  data: T;
+  cachedAt: number;
+}
+
+function getCached<T>(cacheKey: string, ttl: number): T | null {
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const entry: CacheEntry<T> = JSON.parse(raw);
+    if (Date.now() - entry.cachedAt > ttl) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+    return entry.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCache<T>(cacheKey: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = { data, cachedAt: Date.now() };
+    localStorage.setItem(cacheKey, JSON.stringify(entry));
+  } catch {
+    // localStorage full or unavailable — silently skip
+  }
+}
+
+// ── Rate-limit tracking ─────────────────────
+
 interface RateLimitState {
   remaining: number | null;
   limit: number | null;
@@ -59,6 +92,7 @@ function buildAPIError(
 
 /**
  * Core fetch wrapper for NASA APIs.
+ * - Checks localStorage cache before making network requests
  * - Appends API key to every request
  * - Normalizes errors into APIError shape
  * - Logs rate-limit headers
@@ -77,6 +111,15 @@ async function nasaFetch<T>(
     for (const [k, v] of Object.entries(options.params)) {
       url.searchParams.set(k, v);
     }
+  }
+
+  // Check cache before making a network request
+  const cacheTTL = options.cacheTTL ?? 0;
+  const cacheKey = CACHE_PREFIX + url.pathname + url.search;
+
+  if (cacheTTL > 0) {
+    const cached = getCached<T>(cacheKey, cacheTTL);
+    if (cached) return cached;
   }
 
   const fetchInit: RequestInit = {};
@@ -108,25 +151,40 @@ async function nasaFetch<T>(
     throw buildAPIError(response.status, errorMessage, endpoint);
   }
 
-  return response.json() as Promise<T>;
+  const data = await response.json() as T;
+
+  // Cache successful responses
+  if (cacheTTL > 0) {
+    setCache(cacheKey, data);
+  }
+
+  return data;
 }
 
 // ── Public API Methods ───────────────────────
 
+const ONE_DAY = 24 * 60 * 60 * 1000;
+const SIX_HOURS = 6 * 60 * 60 * 1000;
+
 /**
  * Astronomy Picture of the Day
  * Endpoint: GET /planetary/apod
+ * Cache: 24 hours (APOD changes once per day)
  */
 export function fetchAPOD(
   apiKey: string,
   options?: FetchOptions
 ): Promise<APODResponse> {
-  return nasaFetch<APODResponse>('/planetary/apod', apiKey, options);
+  return nasaFetch<APODResponse>('/planetary/apod', apiKey, {
+    ...options,
+    cacheTTL: options?.cacheTTL ?? ONE_DAY,
+  });
 }
 
 /**
  * Mars Rover Photos
  * Endpoint: GET /mars-photos/api/v1/rovers/{rover}/photos
+ * Cache: 6 hours (photos for a given query are static)
  */
 export function fetchMarsPhotos(
   apiKey: string,
@@ -142,13 +200,14 @@ export function fetchMarsPhotos(
   return nasaFetch<MarsPhotosResponse>(
     `/mars-photos/api/v1/rovers/${rover}/photos`,
     apiKey,
-    { ...options, params: cleanParams }
+    { ...options, params: cleanParams, cacheTTL: options?.cacheTTL ?? SIX_HOURS }
   );
 }
 
 /**
  * Mars Rover Latest Photos (no sol required — always returns data)
  * Endpoint: GET /mars-photos/api/v1/rovers/{rover}/latest_photos
+ * Cache: 6 hours
  */
 export function fetchLatestMarsPhotos(
   apiKey: string,
@@ -158,13 +217,14 @@ export function fetchLatestMarsPhotos(
   return nasaFetch<MarsLatestPhotosResponse>(
     `/mars-photos/api/v1/rovers/${rover}/latest_photos`,
     apiKey,
-    options
+    { ...options, cacheTTL: options?.cacheTTL ?? SIX_HOURS }
   );
 }
 
 /**
  * Near Earth Object Web Service (NeoWs)
  * Endpoint: GET /neo/rest/v1/feed
+ * Cache: 24 hours (NEO data for a date range is static)
  */
 export function fetchAsteroids(
   apiKey: string,
@@ -175,6 +235,7 @@ export function fetchAsteroids(
   return nasaFetch<NeoWsResponse>('/neo/rest/v1/feed', apiKey, {
     ...options,
     params: { start_date: startDate, end_date: endDate },
+    cacheTTL: options?.cacheTTL ?? ONE_DAY,
   });
 }
 
