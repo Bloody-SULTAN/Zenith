@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Project Zenith — Space Intelligence Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **[Launch App](https://Bloody-SULTAN.github.io/Zenith/)**
 
-Currently, two official plugins are available:
+A zero-cost, single-page Space Intelligence Dashboard that aggregates real-time orbital tracking, Mars rover photography, asteroid threat monitoring, and NASA's Astronomy Picture of the Day into a futuristic dark-mode interface.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Modules
 
-## React Compiler
+| Module | Data Source | Description |
+|---|---|---|
+| **Orbital Tracker** | Open Notify API | Real-time ISS position on a Leaflet.js map |
+| **Martian Archive** | NASA Mars Rover Photos API | Searchable gallery filtered by Rover & Camera |
+| **Asteroid Sentinel** | NASA NeoWs API | Near Earth Objects dashboard with hazard levels |
+| **Astro-Hero** | NASA APOD API | Dynamic hero banner from Astronomy Picture of the Day |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- **Framework:** React 19 + TypeScript + Vite
+- **Styling:** Tailwind CSS v4 (dark mode)
+- **Icons:** Lucide React
+- **Charts:** Recharts
+- **Maps:** Leaflet.js + React Leaflet
+- **Deployment:** GitHub Pages via GitHub Actions
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started (Local Development)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/Bloody-SULTAN/Zenith.git
+cd Zenith
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Optionally create a `.env` file with a free NASA API key from [api.nasa.gov](https://api.nasa.gov):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_NASA_API_KEY=your_key_here
+```
+
+The app works without one using `DEMO_KEY` (30 requests/hour).
