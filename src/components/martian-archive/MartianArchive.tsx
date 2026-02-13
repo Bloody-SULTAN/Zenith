@@ -35,7 +35,8 @@ export function MartianArchive() {
                 Photo Gallery — Phase 2
               </p>
               <p className="mt-2 font-mono text-sm text-amber-400">
-                Rover: {filters.rover} | Sol: {filters.sol} |{' '}
+                Rover: {filters.rover}
+                {filters.sol ? ` | Sol: ${filters.sol}` : ' | Latest'} |{' '}
                 {photos.length} photos loaded
               </p>
               <p className="mt-1 text-sm">

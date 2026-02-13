@@ -86,6 +86,10 @@ export interface MarsPhotosResponse {
   photos: MarsPhoto[];
 }
 
+export interface MarsLatestPhotosResponse {
+  latest_photos: MarsPhoto[];
+}
+
 // ── Asteroids (NeoWs) ────────────────────────
 export interface CloseApproachData {
   close_approach_date: string;

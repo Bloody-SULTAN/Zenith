@@ -8,6 +8,7 @@
 import type {
   APODResponse,
   MarsPhotosResponse,
+  MarsLatestPhotosResponse,
   NeoWsResponse,
   APIError,
   FetchOptions,
@@ -142,6 +143,22 @@ export function fetchMarsPhotos(
     `/mars-photos/api/v1/rovers/${rover}/photos`,
     apiKey,
     { ...options, params: cleanParams }
+  );
+}
+
+/**
+ * Mars Rover Latest Photos (no sol required — always returns data)
+ * Endpoint: GET /mars-photos/api/v1/rovers/{rover}/latest_photos
+ */
+export function fetchLatestMarsPhotos(
+  apiKey: string,
+  rover: string,
+  options?: FetchOptions
+): Promise<MarsLatestPhotosResponse> {
+  return nasaFetch<MarsLatestPhotosResponse>(
+    `/mars-photos/api/v1/rovers/${rover}/latest_photos`,
+    apiKey,
+    options
   );
 }
 

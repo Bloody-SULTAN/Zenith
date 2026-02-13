@@ -1,11 +1,16 @@
 // ──────────────────────────────────────────────
 // useMarsPhotos — Mars Rover Photos hook
 // ──────────────────────────────────────────────
-// Fetches photos based on rover, sol/date, and camera
-// filters. Cancels stale requests when filters change.
+// On initial load, fetches "latest_photos" (no sol needed —
+// always returns data). When the user applies filters (sol,
+// date, camera), switches to the sol/date-based endpoint.
+// Cancels stale requests when filters change.
 
 import { useState, useEffect } from 'react';
-import { fetchMarsPhotos } from '@/services/nasa.service';
+import {
+  fetchMarsPhotos,
+  fetchLatestMarsPhotos,
+} from '@/services/nasa.service';
 import { useZenith } from '@/context/ZenithContext';
 import type { MarsPhoto, APIError, RoverName } from '@/types';
 
@@ -27,7 +32,6 @@ interface UseMarsPhotosResult {
 
 const DEFAULT_FILTERS: MarsFilters = {
   rover: 'curiosity',
-  sol: '1000',
 };
 
 export function useMarsPhotos(): UseMarsPhotosResult {
@@ -45,16 +49,27 @@ export function useMarsPhotos(): UseMarsPhotosResult {
     setLoading(true);
     setError(null);
 
-    const params: Record<string, string> = {};
-    if (filters.sol) params.sol = filters.sol;
-    if (filters.earthDate) params.earth_date = filters.earthDate;
-    if (filters.camera) params.camera = filters.camera;
-    if (filters.page) params.page = filters.page;
+    const hasSpecificQuery =
+      filters.sol || filters.earthDate || filters.camera;
 
-    fetchMarsPhotos(apiKey, filters.rover, params, {
-      signal: controller.signal,
-    })
-      .then((res) => setPhotos(res.photos))
+    const request = hasSpecificQuery
+      ? // User applied filters — use sol/date endpoint
+        (() => {
+          const params: Record<string, string> = { page: filters.page || '1' };
+          if (filters.sol) params.sol = filters.sol;
+          if (filters.earthDate) params.earth_date = filters.earthDate;
+          if (filters.camera) params.camera = filters.camera;
+          return fetchMarsPhotos(apiKey, filters.rover, params, {
+            signal: controller.signal,
+          }).then((res) => res.photos);
+        })()
+      : // Default — fetch latest photos (always has data)
+        fetchLatestMarsPhotos(apiKey, filters.rover, {
+          signal: controller.signal,
+        }).then((res) => res.latest_photos);
+
+    request
+      .then(setPhotos)
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(err as APIError);

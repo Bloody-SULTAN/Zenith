@@ -1,12 +1,24 @@
 // ──────────────────────────────────────────────
-// ISS Tracking Service — Open Notify API
+// ISS Tracking Service — Where The ISS At API
 // ──────────────────────────────────────────────
-// Separate from nasa.service because Open Notify
-// is a different API (no API key required).
+// Uses https://api.wheretheiss.at (HTTPS) instead
+// of Open Notify (HTTP-only) to avoid mixed-content
+// blocks on HTTPS-hosted sites like GitHub Pages.
 
-import type { ISSPosition, ISSAPIResponse, APIError } from '@/types';
+import type { ISSPosition, APIError } from '@/types';
 
-const ISS_API_URL = 'http://api.open-notify.org/iss-now.json';
+const ISS_API_URL = 'https://api.wheretheiss.at/v1/satellites/25544';
+
+interface WhereTheISSResponse {
+  name: string;
+  id: number;
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  velocity: number;
+  visibility: string;
+  timestamp: number;
+}
 
 function buildISSError(status: number, message: string): APIError {
   return {
@@ -39,11 +51,11 @@ export async function fetchISSPosition(
     throw buildISSError(response.status, response.statusText);
   }
 
-  const data: ISSAPIResponse = await response.json();
+  const data: WhereTheISSResponse = await response.json();
 
   return {
-    latitude: parseFloat(data.iss_position.latitude),
-    longitude: parseFloat(data.iss_position.longitude),
+    latitude: data.latitude,
+    longitude: data.longitude,
     timestamp: data.timestamp,
   };
 }
