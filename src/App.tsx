@@ -10,7 +10,7 @@ import { Settings } from '@/pages/Settings';
 export default function App() {
   return (
     <ZenithProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/Zenith">
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
